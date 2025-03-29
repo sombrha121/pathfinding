@@ -2,9 +2,10 @@
 Creado por Javier Muñiz @javianmuniz para
 el canal de YouTube "Programar es increíble"
 
- 
- 
-Modificado para permitir selección interactiva de origen y destino
+Modificado para permitir:
+- Selección interactiva de origen y destino
+- Dos modos de obstáculos: aleatorio y manual
+- Colocación/eliminación manual de obstáculos
 */
 
 var canvas;
@@ -37,6 +38,9 @@ var terminado = false;
 
 // Variables para selección interactiva
 var seleccionandoOrigen = true;
+var modoObstaculos = 'aleatorio'; // 'aleatorio' o 'manual'
+var colocandoObstaculos = false;
+var eliminandoObstaculos = false;
 
 //CREAMOS UN ARRAY 2D
 function creaArray2D(f,c){
@@ -69,10 +73,6 @@ function Casilla(x,y){
 
   //TIPO (obstáculo=1, vacío=0)
   this.tipo = 0;
-  // obstaculo puede salir dentro de 0 a 4
-  var aleatorio = Math.floor(Math.random()*5);  // 0-4
-  if(aleatorio == 1)
-      this.tipo = 1;
 
   //PESOS o como de lejo estamos de la meta 
   this.f = 0;  //coste total (g+h) 
@@ -130,12 +130,41 @@ function Casilla(x,y){
   }
 }
 
+function generarObstaculosAleatorios() {
+  for(i = 0; i < filas; i++) {
+    for(j = 0; j < columnas; j++) {
+      // No modificar origen y destino si ya están establecidos
+      if ((!principio || (escenario[i][j] !== principio)) && 
+          (!fin || (escenario[i][j] !== fin))) {
+        var aleatorio = Math.floor(Math.random()*5); // 0-4
+        escenario[i][j].tipo = (aleatorio == 1) ? 1 : 0;
+      }
+    }
+  }
+}
+
+function alternarObstaculo(x, y) {
+  var casilla = escenario[y][x];
+  // No permitir modificar origen o destino
+  if (casilla === principio || casilla === fin) return;
+  
+  casilla.tipo = casilla.tipo === 0 ? 1 : 0;
+  // Reiniciar búsqueda si ya teníamos un camino
+  if (camino.length > 0) {
+    reiniciarBusqueda();
+  }
+}
+
 function manejarClick(evento) {
+  // Si estamos en modo manual y colocando/eliminando obstáculos, no procesar selección
+  if (modoObstaculos === 'manual' && (colocandoObstaculos || eliminandoObstaculos)) {
+    return;
+  }
+
   var rect = canvas.getBoundingClientRect();
   var x = Math.floor((evento.clientX - rect.left) / anchoT);
   var y = Math.floor((evento.clientY - rect.top) / altoT);
   
-  // Verificar que las coordenadas están dentro del rango
   if (x >= 0 && x < columnas && y >= 0 && y < filas) {
     var casilla = escenario[y][x];
     
@@ -144,15 +173,27 @@ function manejarClick(evento) {
       if (seleccionandoOrigen) {
         principio = casilla;
         console.log("Origen seleccionado en: (" + x + ", " + y + ")");
-        seleccionandoOrigen = false; // Cambiar a selección de destino
+        seleccionandoOrigen = false;
       } else {
         fin = casilla;
         console.log("Destino seleccionado en: (" + x + ", " + y + ")");
-        seleccionandoOrigen = true; // Cambiar a selección de origen para el próximo ciclo
-        
-        // Reiniciar el algoritmo con los nuevos puntos
+        seleccionandoOrigen = true;
         reiniciarBusqueda();
       }
+    }
+  }
+}
+
+function manejarClickObstaculos(evento) {
+  var rect = canvas.getBoundingClientRect();
+  var x = Math.floor((evento.clientX - rect.left) / anchoT);
+  var y = Math.floor((evento.clientY - rect.top) / altoT);
+  
+  if (x >= 0 && x < columnas && y >= 0 && y < filas) {
+    if (colocandoObstaculos) {
+      alternarObstaculo(x, y);
+    } else if (eliminandoObstaculos) {
+      alternarObstaculo(x, y);
     }
   }
 }
@@ -168,11 +209,48 @@ function reiniciarBusqueda() {
   }
 }
 
+function reiniciarTodo() {
+  // Limpiar selecciones
+  principio = null;
+  fin = null;
+  openSet = [];
+  closedSet = [];
+  camino = [];
+  terminado = false;
+  seleccionandoOrigen = true;
+  
+  // Regenerar el escenario
+  escenario = creaArray2D(filas, columnas);
+  for(i = 0; i < filas; i++) {
+    for(j = 0; j < columnas; j++) {
+      escenario[i][j] = new Casilla(j, i);
+    }
+  }
+  
+  // Generar obstáculos según el modo
+  if (modoObstaculos === 'aleatorio') {
+    generarObstaculosAleatorios();
+  }
+  
+  // Añadir vecinos
+  for(i = 0; i < filas; i++) {
+    for(j = 0; j < columnas; j++) {
+      escenario[i][j].addVecinos();
+    }
+  }
+  
+  borraCanvas();
+}
+
+function cambiarModoObstaculos(modo) {
+  modoObstaculos = modo;
+  reiniciarTodo();
+}
+
 function inicializa(){
   canvas = document.getElementById('canvas');
   ctx = canvas.getContext('2d');
 
-  //CALCULAMOS EL TAMAÑO DE LOS TILES (Proporcionalmente)
   anchoT = parseInt(canvas.width/columnas);
   altoT = parseInt(canvas.height/filas);
 
@@ -182,8 +260,13 @@ function inicializa(){
   //AÑADIMOS LOS OBJETOS CASILLAS
   for(i=0;i<filas;i++){
     for(j=0;j<columnas;j++){
-        escenario[i][j] = new Casilla(j,i)
+        escenario[i][j] = new Casilla(j,i);
     }
+  }
+
+  // Generar obstáculos según el modo seleccionado
+  if (modoObstaculos === 'aleatorio') {
+    generarObstaculosAleatorios();
   }
 
   //AÑADIMOS LOS VECINOS
@@ -193,10 +276,38 @@ function inicializa(){
     }
   }
 
-  // Agregar evento de clic al canvas
+  // Eventos
   canvas.addEventListener('click', manejarClick, false);
+  
+  // Eventos para modo manual
+  canvas.addEventListener('mousedown', function(e) {
+    if (modoObstaculos === 'manual') {
+      if (e.button === 0) { // Click izquierdo
+        colocandoObstaculos = true;
+        manejarClickObstaculos(e);
+      } else if (e.button === 2) { // Click derecho
+        eliminandoObstaculos = true;
+        manejarClickObstaculos(e);
+      }
+    }
+  });
+  
+  canvas.addEventListener('mousemove', function(e) {
+    if (colocandoObstaculos || eliminandoObstaculos) {
+      manejarClickObstaculos(e);
+    }
+  });
+  
+  canvas.addEventListener('mouseup', function() {
+    colocandoObstaculos = false;
+    eliminandoObstaculos = false;
+  });
+  
+  // Prevenir el menú contextual del click derecho
+  canvas.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+  });
 
-  //EMPEZAMOS A EJECUTAR EL BUCLE PRINCIPAL
   setInterval(function(){principal();},1000/FPS);
 }
 

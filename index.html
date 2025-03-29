@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>A* Pathfinding - Selección Interactiva</title>
+    <title>A* Pathfinding - Modos Aleatorio/Manual</title>
     <script src='js/pathfinding.js'></script>
     <style>
       body {
@@ -34,38 +34,77 @@
       button:hover {
         background-color: #45a049;
       }
+      .modo-activo {
+        background-color: #008CBA;
+      }
+      .controles {
+        margin-bottom: 15px;
+      }
     </style>
   </head>
 
   <body onload='inicializa();'>
     <h1>Algoritmo A* - Pathfinding</h1>
     
+    <div class="controles">
+      <button id="btnAleatorio" onclick="cambiarModoObstaculos('aleatorio')" class="modo-activo">Modo Aleatorio</button>
+      <button id="btnManual" onclick="cambiarModoObstaculos('manual')">Modo Manual</button>
+      <button onclick="reiniciarTodo()">Reiniciar Todo</button>
+    </div>
+    
     <div id="instrucciones">
       <h3>Instrucciones:</h3>
-      <ol>
-        <li>Haz clic en cualquier casilla <span style="color: #777777;">gris</span> para seleccionar el punto de origen (<span style="color: #00FF00;">verde</span>)</li>
-        <li>Haz clic en otra casilla <span style="color: #777777;">gris</span> para seleccionar el destino (<span style="color: #FF0000;">rojo</span>)</li>
-        <li>El algoritmo encontrará automáticamente el camino (<span style="color: #00FFFF;">azul claro</span>)</li>
-        <li>Para cambiar los puntos, simplemente haz clic en nuevos orígenes y destinos</li>
-        <li>Los cuadros <span style="color: #000000;">negros</span> son obstáculos</li>
-      </ol>
+      <div id="instrucciones-aleatorio">
+        <p><strong>Modo Aleatorio:</strong></p>
+        <ol>
+          <li>Haz clic para seleccionar origen (verde) y destino (rojo)</li>
+          <li>Los obstáculos (negros) se generan automáticamente</li>
+          <li>El camino aparecerá en azul claro</li>
+        </ol>
+      </div>
+      <div id="instrucciones-manual" style="display:none;">
+        <p><strong>Modo Manual:</strong></p>
+        <ol>
+          <li>Primero selecciona origen y destino (verde y rojo)</li>
+          <li>Click izquierdo: añadir obstáculo</li>
+          <li>Click derecho: eliminar obstáculo</li>
+          <li>Arrastra para colocar/eliminar múltiples obstáculos</li>
+          <li>El camino se actualiza automáticamente</li>
+        </ol>
+      </div>
     </div>
     
     <div id="estado">Estado: Seleccione el punto de origen</div>
- 
     <canvas id='canvas' width='500' height='500'></canvas>
     
     <script>
       // Actualizar el estado de selección
-      canvas.addEventListener('click', function() {
-        var estado = document.getElementById('estado');
-        if (seleccionandoOrigen) {
-          estado.textContent = "Estado: Seleccione el punto de destino";
-        } else {
-          estado.textContent = "Estado: Seleccione el punto de origen";
+      canvas.addEventListener('click', function(e) {
+        if (modoObstaculos === 'aleatorio' || (!colocandoObstaculos && !eliminandoObstaculos)) {
+          var estado = document.getElementById('estado');
+          if (seleccionandoOrigen) {
+            estado.textContent = "Estado: Seleccione el punto de destino";
+          } else {
+            estado.textContent = "Estado: Seleccione el punto de origen";
+          }
         }
       });
-  
+      
+      function cambiarModoObstaculos(modo) {
+        modoObstaculos = modo;
+        
+        // Actualizar botones
+        document.getElementById('btnAleatorio').classList.toggle('modo-activo', modo === 'aleatorio');
+        document.getElementById('btnManual').classList.toggle('modo-activo', modo === 'manual');
+        
+        // Mostrar instrucciones adecuadas
+        document.getElementById('instrucciones-aleatorio').style.display = 
+          (modo === 'aleatorio') ? 'block' : 'none';
+        document.getElementById('instrucciones-manual').style.display = 
+          (modo === 'manual') ? 'block' : 'none';
+        
+        reiniciarTodo();
+      }
     </script>
   </body>
 </html>
