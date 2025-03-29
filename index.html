@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>A* Pathfinding - Selección Interactiva</title>
+    <script src='js/pathfinding.js'></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      #instrucciones {
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-radius: 5px;
+      }
+      #estado {
+        margin-top: 10px;
+        font-weight: bold;
+      }
+      canvas {
+        border: 2px solid #000;
+        margin-top: 10px;
+      }
+      button {
+        padding: 8px 15px;
+        margin: 5px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </head>
+
+  <body onload='inicializa();'>
+    <h1>Algoritmo A* - Pathfinding</h1>
+    
+    <div id="instrucciones">
+      <h3>Instrucciones:</h3>
+      <ol>
+        <li>Haz clic en cualquier casilla <span style="color: #777777;">gris</span> para seleccionar el punto de origen (<span style="color: #00FF00;">verde</span>)</li>
+        <li>Haz clic en otra casilla <span style="color: #777777;">gris</span> para seleccionar el destino (<span style="color: #FF0000;">rojo</span>)</li>
+        <li>El algoritmo encontrará automáticamente el camino (<span style="color: #00FFFF;">azul claro</span>)</li>
+        <li>Para cambiar los puntos, simplemente haz clic en nuevos orígenes y destinos</li>
+        <li>Los cuadros <span style="color: #000000;">negros</span> son obstáculos</li>
+      </ol>
+    </div>
+    
+    <div id="estado">Estado: Seleccione el punto de origen</div>
+ 
+    <canvas id='canvas' width='500' height='500'></canvas>
+    
+    <script>
+      // Actualizar el estado de selección
+      canvas.addEventListener('click', function() {
+        var estado = document.getElementById('estado');
+        if (seleccionandoOrigen) {
+          estado.textContent = "Estado: Seleccione el punto de destino";
+        } else {
+          estado.textContent = "Estado: Seleccione el punto de origen";
+        }
+      });
+  
+    </script>
+  </body>
+</html>
